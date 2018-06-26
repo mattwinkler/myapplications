@@ -12,7 +12,9 @@ https://blog.insightdatascience.com/getting-started-with-aws-serverless-architec
 
 This application uses Python and AWS to create a Twitter streaming app with Amazon Kinesis and DynamoDB.  As of 6/26/2018, the application ingests data and stores hashtags associated with a set of search terms specified by the user.  Future iterations will build out the DynamoDB schema more fully and apply Natural Language Processing concepts to the backend.  
 
-# Architecture:
+# Proposed architecture:
+
+As of this writing (6/26/2018), the architecture below hasn't been implemented.  A laptop is sitting where EC2 and Lambda are indicated in the diagram below.
 
 ![Alt text](images/twitter-stream-architecture.png?raw=true "Sample Solution")
 
