@@ -23,13 +23,14 @@ Option 1) If you have the AWS CLI installed (https://aws.amazon.com/cli/), you c
 
 Option 2) It's also possible to specify your access keys for an individual connection without setting the defaults.  It's recommended to save the keys themselves in an environment variable so they aren't accidentally committed to a public repository.  See example below:  
 
-`import boto3  
-client = boto3.client(
+`import boto3`
+
+`client = boto3.client(
     's3',
     aws_access_key_id=ACCESS_KEY,
     aws_secret_access_key=SECRET_KEY,
     aws_session_token=SESSION_TOKEN,
-)`  
+)`
 
 ### Twitter:
 
