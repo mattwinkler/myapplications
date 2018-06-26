@@ -75,8 +75,14 @@ Next run `make-dynamo-table.py`.  This will create the DynamoDB table to house d
 
 Almost there!  There are two python applications that must be running for the DynamoDB table to update:
 
-`kinesis-twitter.py`
+`kinesis-twitter.py`  
 `kinesis-dynamo.py`
 
+Hint: Run each script in a separate terminal window.  Once everything is running, you should be able to see the DynamoDB table updating within the AWS Console.  
 
+# Analysis:
+
+See outputs in the `viz/` folder.
+
+The current version of this application uses a Jupyter Notebook running in an AWS Sagemaker instance for the analysis step. Future iterations will capture richer data and apply more sophisticated techniques to it.  To run the same analysis locally instead of in Sagemaker, install anaconda `pip install anaconda`.
 
