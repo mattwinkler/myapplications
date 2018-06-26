@@ -14,6 +14,8 @@ This application uses Python and AWS to create a Twitter streaming app with Amaz
 
 # Architecture:
 
+![Alt text](images/twitter-stream-architecture.png?raw=true "Sample Solution")
+
 # Prerequisites  
 
 * Python 3.6 installed
