@@ -65,7 +65,7 @@ Update the `config.ini` file as-needed to meet your application's requirements. 
 
 ### Kinesis:
 
-To begin with, run `make-stream.py`.  If everything is set up correctly, you should be able to see the stream with the name specified in the [AWS-KINESIS] section of `config.ini`.  
+To begin with, run `make-stream.py`.  If everything is set up correctly, you should be able to see the stream with the name specified in the [AWS-KINESIS] section of `config.ini` appear in the AWS Console. 
 
 ### DynamoDB:
 
