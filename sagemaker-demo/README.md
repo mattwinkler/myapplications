@@ -21,6 +21,7 @@ This repository contains the infrastructure demo'd during the April 25 meeting o
 
 #### Deployment Steps
 
-Within the `cft` folder are the templates for each service deployed in the stack. The `build.txt` file contains AWS CLI commands, in the order listed, to deploy. You will also need to include the `--profile` and `--region` variables in the command.   
+Within the `cft` folder are the templates for each service deployed in the stack. The `build.txt` file contains AWS CLI commands, in the order listed, to deploy. You will also need to include the `--profile` and `--region` variables in the command.  
+
 
 TODO: Write one script to deploy all resources
