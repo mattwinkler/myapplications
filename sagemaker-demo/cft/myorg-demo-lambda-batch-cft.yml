@@ -31,7 +31,7 @@ Parameters:
 
   OwnerEmailDist: 
     Type: String
-    Default: matt.winkler@slalom.com
+    Default: example@email.com
     Description: Email distribution list of the team that owns the component.
 
   CostCenterNumber: 

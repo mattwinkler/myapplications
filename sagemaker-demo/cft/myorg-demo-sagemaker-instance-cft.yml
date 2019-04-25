@@ -44,7 +44,7 @@ Conditions:
 
 Resources:
   # Possible to automate things like cloning a git repo, downloading additional libraries, etc.
-  # MPANotebookLifecycleConfiguration:
+  # NotebookLifecycleConfiguration:
   #   Type: "AWS::SageMaker::NotebookInstanceLifecycleConfig"
   #   Properties:
   #     NotebookInstanceLifecycleConfigName: !Sub ${Org}-${Environment}-${Function}-${Appname}-sagemaker-lifecyle-config"

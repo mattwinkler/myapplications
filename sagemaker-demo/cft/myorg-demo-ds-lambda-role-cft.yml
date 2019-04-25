@@ -31,7 +31,7 @@ Parameters:
 
   OwnerEmailDist: 
     Type: String
-    Default: matt.winkler@slalom.com
+    Default: example@email.com
     Description: Email distribution list of the team that owns the component.
 
   CostCenterNumber: 
@@ -64,7 +64,7 @@ Conditions:
           
 Resources:
   # Lambda Execution role to read and write objects in S3
-  MPADataScienceLambdaRole:
+  DataScienceLambdaRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -75,7 +75,7 @@ Resources:
           Action: ['sts:AssumeRole']
       Path: /
       ManagedPolicyArns:
-      - Ref: MPADataScienceLambdaPolicy
+      - Ref: DataScienceLambdaPolicy
 
       Policies:
       - PolicyName: S3LambdaAccessPolicy
@@ -99,7 +99,7 @@ Resources:
           - 'lambda'
           - 'role'
 
-  MPADataScienceLambdaPolicy:    #Policy to be used by Lambda 
+  DataScienceLambdaPolicy:    #Policy to be used by Lambda 
     Type: AWS::IAM::ManagedPolicy
     Properties:
       ManagedPolicyName: 
@@ -166,8 +166,8 @@ Resources:
           Resource: "*"          
 
 Outputs:
-  MPADataScienceLambdaRole:
+  DataScienceLambdaRole:
     Description: The lambda role for accessing the Sagemaker API
-    Value: !GetAtt MPADataScienceLambdaRole.Arn
+    Value: !GetAtt DataScienceLambdaRole.Arn
     Export:
       Name: !Sub "${AWS::StackName}-DATA-SCIENCE-LAMBDA-ROLE-ARN"      
