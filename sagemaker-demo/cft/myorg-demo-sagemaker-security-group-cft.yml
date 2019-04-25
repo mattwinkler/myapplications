@@ -1,0 +1,123 @@
+Description: Creates Security group to attach to Sagemaker to allow admin access to the instance.
+
+Parameters:
+  Org:
+    Type: String
+    Default: myorg
+    AllowedPattern: "[a-z]+"
+    Description: (USE LOWERCASE) The company (Org) for these resources.
+    
+  Environment: 
+    Type: String
+    AllowedPattern: "[a-z]+"
+    AllowedValues: 
+      - sbox
+      - dev
+      - test
+      - prod
+    Description: (USE LOWERCASE) Enter the environment to which this stack is to be deployed.
+
+  Appname: 
+    Type: String
+    AllowedPattern: "[a-z]+"
+    Default: demo
+    Description: (USE LOWERCASE) The Remedy CMDB Inventory name of app.
+
+  AppId: 
+    Type: String
+    Default: 555555
+    Description: The unique number assigned to your app during Archer assessment.
+
+  OwnerEmailDist: 
+    Type: String
+    Default: example@email.com
+    Description: Email distribution list of the team that owns the component.
+
+  CostCenterNumber: 
+    Type: String
+    Default: 111111
+    Description: Cost Center Number associated to the system.
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - 
+        Label: 
+          default: "Standard Tags"
+        Parameters: 
+          - Org
+          - Environment
+          - Appname
+          - AppId
+          - OwnerEmailDist
+          - CostCenterNumber
+
+     # -
+     #   Label: 
+     #     default: "Admin Config"
+     #   Parameters: 
+     #     - AdminCidr
+
+Resources:
+  #Security Groups
+  SagemakerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName:
+        !Join
+        - '-'
+        - - !Ref Org
+          - !Ref Environment
+          - !Ref Appname
+          - 'SAGEMAKER'
+          - 'SECURITY-GROUP'
+      GroupDescription: Allow TCP access to Sagemaker instance, HTTP/HTTPS from instance
+      VpcId:
+        Fn::ImportValue:
+          !Join
+          - '-'
+          - - !Ref Org
+            - !Ref Environment
+            - !Ref Appname
+            - 'all-v1x0-outputs-stk'
+            - 'VPCID'
+  
+  SecurityGroupIngress: # Update to admin CIDR if not accessing via the console.
+    Type: "AWS::EC2::SecurityGroupIngress"
+    DependsOn: SagemakerSecurityGroup
+    Properties:
+      IpProtocol: tcp
+      FromPort: '0'
+      ToPort: '65535'
+      SourceSecurityGroupId: !Ref SagemakerSecurityGroup
+      GroupId: !Ref SagemakerSecurityGroup
+      # - IpProtocol: tcp
+      #   FromPort: '0'
+      #   ToPort: '65535'
+      #   SourceSecurityGroupId: !Ref SagemakerSecurityGroup
+  HTTPSSecurityGroupEgress:
+    Type: "AWS::EC2::SecurityGroupEgress"
+    DependsOn: SagemakerSecurityGroup
+    Properties:
+      IpProtocol: tcp
+      FromPort: '443'
+      ToPort: '443'
+      GroupId: !Ref SagemakerSecurityGroup
+      CidrIp: 0.0.0.0/0
+  
+  HTTPSecurityGroupEgress:
+    Type: "AWS::EC2::SecurityGroupEgress"
+    DependsOn: SagemakerSecurityGroup
+    Properties:
+      IpProtocol: tcp
+      FromPort: '80'
+      ToPort: '80'
+      GroupId: !Ref SagemakerSecurityGroup
+      CidrIp: 0.0.0.0/0
+  
+Outputs:
+  SageMakerSecurityGroupId:
+    Description: The Sagemaker security group ID
+    Value: !Ref SagemakerSecurityGroup 
+    Export:
+      Name: !Sub "${AWS::StackName}-SAGEMAKER-SECURITY-GROUP"

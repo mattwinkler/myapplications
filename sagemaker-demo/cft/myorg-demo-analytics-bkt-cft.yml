@@ -1,0 +1,164 @@
+
+Description: Creates the analytics bucket
+
+Parameters: 
+
+  Org: 
+    Type: String
+    Default: myorg
+    AllowedPattern: "[a-z]+"
+    Description: (USE LOWERCASE) The company (Org) for these resources.
+    
+  Environment: 
+    Type: String
+    AllowedPattern: "[a-z]+"
+    AllowedValues: 
+      - sbox
+      - dev
+      - test
+      - prod
+    Description: (USE LOWERCASE) Enter the environment to which this stack is to be deployed.
+
+  Appname: 
+    Type: String
+    AllowedPattern: "[a-z]+"
+    Default: demo
+    Description: (USE LOWERCASE) The Remedy CMDB Inventory name of app.
+    
+  AppId: 
+    Type: String
+    Default: 555555
+    Description: The unique number assigned to your app during Archer assessment.
+
+  OwnerEmailDist: 
+    Type: String
+    Default: example@email.com
+    Description: Email distribution list of the team that owns the component.
+
+  CostCenterNumber: 
+    Type: String
+    Default: 111111
+    Description: Cost Center Number associated to the system.
+
+  ExpirationInDays:
+    Type: String
+    Default: 2555
+    Description: Number of days a raw file will exist in the data store before being deleted (Default is 2555 days = 7 Years)
+  
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - 
+        Label: 
+          default: "Standard Tags"
+        Parameters: 
+          - Org
+          - Environment
+          - Appname
+          - AppId
+          - OwnerEmailDist
+          - CostCenterNumber
+
+Conditions:
+  CreateSboxTags: !Equals [ !Ref Environment, sbox ]
+  UseDefaultKms: !Equals [ !Ref Environment, sbox ]
+          
+Resources:
+  # Permission on the bucket to invoke lambda functions
+  LambdaBatchTransformPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName:
+        Fn::ImportValue:
+          !Join
+          - '-'
+          - - !Ref Org
+            - !Ref Environment
+            - !Ref Appname
+            - 'v1x0'
+            - 'lambda-batch-stk'
+            - 'DS-BATCH-TRANSFORM-LAMBDA-ARN'
+
+      Principal: s3.amazonaws.com
+      SourceAccount: !Ref "AWS::AccountId"
+      
+  #S3 Bucket
+  S3Bucket:
+    #DependsOn: LambdaOutlierBatchPermission
+    Type: AWS::S3::Bucket
+    Properties:
+      # AccessControl: Private
+      # BucketEncryption: 
+      #   ServerSideEncryptionConfiguration:
+      #     - ServerSideEncryptionByDefault:
+      #         SSEAlgorithm: aws:kms
+      #         KMSMasterKeyID:
+      #           Fn::ImportValue:
+      #             !Sub "${Org}-${Environment}-${Appname}-all-v1x0-outputs-stk-MPA-KMS-KEY"
+
+      BucketName: 
+        !Join
+        - '-'
+        - - !Ref Org
+          - !Ref Environment
+          - !Ref Appname
+          - !Ref "AWS::Region"
+          - 'analytics-bkt'
+      
+      # Set up notifications to trigger lambda function for batch transformations
+      NotificationConfiguration:
+        LambdaConfigurations:
+        - # For outlier batch transform jobs:
+          Event: 's3:ObjectCreated:*'
+          Filter:
+            S3Key:
+              Rules:
+                - 
+                  Name: prefix
+                  Value: "data/predict"
+                - 
+                  Name: suffix
+                  Value: csv
+
+          Function:
+            Fn::ImportValue:
+              !Join
+              - '-'
+              - - !Ref Org
+                - !Ref Environment
+                - !Ref Appname
+                - 'v1x0'
+                - 'lambda-batch-stk'
+                - 'DS-BATCH-TRANSFORM-LAMBDA-ARN'
+  
+      Tags:
+        - 
+          Key: "Env"
+          Value: !Ref Environment
+        - 
+          Key: "Appname"
+          Value: !Ref Appname
+        - 
+          Key: "Appid"
+          Value: !Ref AppId
+        - 
+          Key: "Owner"
+          Value: !Ref OwnerEmailDist
+        - 
+          Key: "Costcenter"
+          Value: !Ref CostCenterNumber
+
+Outputs:
+  BucketName:
+    Description: The analytics bucket name
+    Value: !Ref S3Bucket
+    Export:
+      Name: !Sub "${AWS::StackName}-ANALYTICS-BUCKET-NAME"
+      
+  BucketArn:
+    Description: The analytics bucket ARN
+    Value: !GetAtt S3Bucket.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-ANALYTICS-BUCKET-ARN"
+

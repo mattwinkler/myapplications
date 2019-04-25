@@ -1,0 +1,173 @@
+Description: Creates IAM role for Lambda calls to Sagemaker API
+
+Parameters: 
+
+  Org: 
+    Type: String
+    Default: myorg
+    AllowedPattern: "[a-z]+"
+    Description: (USE LOWERCASE) The company (Org) for these resources.
+    
+  Environment: 
+    Type: String
+    AllowedPattern: "[a-z]+"
+    AllowedValues: 
+      - sbox
+      - dev
+      - test
+      - prod
+    Description: (USE LOWERCASE) Enter the environment to which this stack is to be deployed.
+    
+  Appname: 
+    Type: String
+    AllowedPattern: "[a-z]+"
+    Default: demo
+    Description: (USE LOWERCASE) The Remedy CMDB Inventory name of app.
+
+  AppId: 
+    Type: String
+    Default: 555555
+    Description: The unique number assigned to your app during Archer assessment.
+
+  OwnerEmailDist: 
+    Type: String
+    Default: matt.winkler@slalom.com
+    Description: Email distribution list of the team that owns the component.
+
+  CostCenterNumber: 
+    Type: String
+    Default: 111111
+    Description: Cost Center Number associated to the system.
+
+  EtlCodeVersion: 
+    Type: String
+    Default: '1'
+    Description: Version of the ETL code spec
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - 
+        Label: 
+          default: "Standard Tags"
+        Parameters: 
+          - Org
+          - Environment
+          - Appname
+          - AppId
+          - OwnerEmailDist
+          - CostCenterNumber
+
+
+Conditions:
+  CreateSboxTags: !Equals [ !Ref Environment, sbox ]
+          
+Resources:
+  # Lambda Execution role to read and write objects in S3
+  MPADataScienceLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal: {Service: [lambda.amazonaws.com]}
+          Action: ['sts:AssumeRole']
+      Path: /
+      ManagedPolicyArns:
+      - Ref: MPADataScienceLambdaPolicy
+
+      Policies:
+      - PolicyName: S3LambdaAccessPolicy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+              - 's3:*'
+              Resource: ['*']
+
+      RoleName:
+        !Join
+        - '-'
+        - - !Ref Org
+          - !Ref Environment
+          - !Ref Appname
+          - !Ref "AWS::Region"
+          - 'data'
+          - 'science'
+          - 'lambda'
+          - 'role'
+
+  MPADataScienceLambdaPolicy:    #Policy to be used by Lambda 
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: 
+        !Join
+        - '-'
+        - - !Ref Org
+          - !Ref Environment
+          - !Ref Appname
+          - !Ref 'AWS::Region'
+          - 'data'
+          - 'science'
+          - 'lambda'
+          - 'policy'
+
+      Description: Provides Lambda service policy for calling the Sagemaker API
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+
+        ## Review this policy for more actions to add as application Instance Profile
+        # All Sagemaker permissions
+        - Effect: Allow
+          Action:
+          - sagemaker:*
+          Resource: '*'
+        
+        # Needs to be able to pass role to sagemaker functionality
+        - Effect: Allow
+          Action:
+          - iam:GetRole
+          - iam:PassRole
+          Resource: '*'
+        
+        # All permissions on analytics and code buckets
+        - Effect: Allow
+          Action:
+          - 's3:*'
+          Resource: 
+            - !Join
+              - '-'
+              - - 'arn:aws:s3:::'
+                - !Ref Org
+                - !Ref Environment
+                - !Ref Appname
+                - !Ref 'AWS::Region'
+                - 'analytics'
+                - 'bkt/*'
+        
+        # network interfaces and logging execution results:
+        - Effect: Allow
+          Action:
+          - logs:CreateLogGroup
+          - logs:CreateLogStream
+          - logs:PutLogEvents
+          - logs:AssociateKmsKey
+          - ec2:CreateNetworkInterface
+          - ec2:DescribeNetworkInterfaces
+          - ec2:DeleteNetworkInterface
+          Resource: "*"
+
+        - Effect: Allow
+          Action:
+          - lambda:InvokeFunction
+          Resource: "*"          
+
+Outputs:
+  MPADataScienceLambdaRole:
+    Description: The lambda role for accessing the Sagemaker API
+    Value: !GetAtt MPADataScienceLambdaRole.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-DATA-SCIENCE-LAMBDA-ROLE-ARN"      

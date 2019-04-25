@@ -1,0 +1,174 @@
+Description: Creates Lambda function to perform batch transformations
+
+Parameters: 
+
+  Org: 
+    Type: String
+    Default: myorg
+    AllowedPattern: "[a-z]+"
+    Description: (USE LOWERCASE) The company (Org) for these resources.
+    
+  Environment: 
+    Type: String
+    AllowedPattern: "[a-z]+"
+    AllowedValues: 
+      - sbox
+      - dev
+      - test
+      - prod
+    Description: (USE LOWERCASE) Enter the environment to which this stack is to be deployed.
+
+  Appname: 
+    Type: String
+    AllowedPattern: "[a-z]+"
+    Default: demo
+    Description: (USE LOWERCASE) The Remedy CMDB Inventory name of app.
+
+  AppId: 
+    Type: String
+    Default: 555555
+    Description: The unique number assigned to your app during Archer assessment.
+
+  OwnerEmailDist: 
+    Type: String
+    Default: matt.winkler@slalom.com
+    Description: Email distribution list of the team that owns the component.
+
+  CostCenterNumber: 
+    Type: String
+    Default: 111111
+    Description: Cost Center Number associated to the system.
+
+  BatchTransformCodeVersion: 
+    Type: String
+    Default: 1
+    Description: Version number of zip file containing ETL code.  MUST be changed to force update of Lambda.  Assumes zip file name conforms to [Appname]-etl-lambda-v[EtlCodeVersion].zip
+  
+  BatchJobName:
+    Type: String
+    Default: batch-transform-job
+    Description: Name of the batch transformation job that lambda will start
+     
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - 
+        Label: 
+          default: "Standard Tags"
+        Parameters: 
+          - Org
+          - Environment
+          - Appname
+          - AppId
+          - OwnerEmailDist
+          - CostCenterNumber
+
+      - 
+        Label: 
+          default: "Lambda Config"
+        Parameters: 
+          - EtlCodeVersion
+
+Conditions:
+  CreateSboxTags: !Equals [ !Ref Environment, sbox ]
+          
+Resources:
+  #Lambda Function to perform batch transformations on files dropped from the data science ETL
+  BatchTransformFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName:
+        !Join
+        - '-'
+        - - !Ref Org
+          - !Ref Environment
+          - !Ref Appname
+          - 'batch'
+          - 'transform'
+          - 'lambda'
+      
+      Handler: batch_transform.lambda_handler
+      Role:
+        Fn::ImportValue:
+          !Join
+          - '-'
+          - - !Ref Org
+            - !Ref Environment
+            - !Ref Appname
+            - 'v1x0'
+            - 'ds-lambda-role-stk'
+            - 'DATA-SCIENCE-LAMBDA-ROLE-ARN'
+
+      Code:
+        S3Bucket:
+          !Join
+          - '-'
+          - - !Ref Org
+            - !Ref Environment
+            - !Ref Appname
+            - !Ref AWS::Region
+            - 'code-bkt'
+
+        S3Key: !Sub code/batch-transform-v${BatchTransformCodeVersion}.zip
+
+      Environment:
+        Variables:
+          BATCH_JOB_NAME: !Ref BatchJobName
+          TRAINED_MODEL_PREFIX: models
+          MODEL_NAME_VERSION: xgboost-2019-04-24-22-15-58-574
+          OUTPUT_PREFIX: predictions
+          INSTANCE_TYPE: ml.c4.xlarge
+          ORG: !Ref Org
+          ENVIRONMENT: !Ref Environment
+          APPID: !Ref AppId
+          APPNAME: !Ref Appname
+          COST_CENTER_NUMBER: !Ref CostCenterNumber
+          OWNER_EMAIL_DIST: !Ref OwnerEmailDist
+
+
+      Runtime: python3.6
+      Timeout: 300     
+      Tags:
+        - 
+          Key: "Name"
+          Value:
+            !Join
+            - '-'
+            - - !Ref Org
+              - !Ref Environment
+              - !Ref Appname
+              - 'batch'
+              - 'transform'
+              - 'lambda'
+        - 
+          Key: "Env"
+          Value: !Ref Environment
+        - 
+          Key: "Appname"
+          Value: !Ref Appname
+        - 
+          Key: "Appid"
+          Value: !Ref AppId
+        - 
+          Key: "Owner"
+          Value: !Ref OwnerEmailDist
+        - 
+          Key: "Costcenter"
+          Value: !Ref CostCenterNumber
+
+                
+  #Allow S3 to invoke this function
+  LambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt BatchTransformFunction.Arn
+      Action: 'lambda:InvokeFunction'
+      Principal: s3.amazonaws.com
+      SourceAccount: !Ref 'AWS::AccountId'
+          
+Outputs:
+  BatchTransformFunctionArn:
+    Description: The ETL Lambda ARN
+    Value: !GetAtt BatchTransformFunction.Arn 
+    Export:
+      Name: !Sub "${AWS::StackName}-DS-BATCH-TRANSFORM-LAMBDA-ARN"
