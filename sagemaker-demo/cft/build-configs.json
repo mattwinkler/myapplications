@@ -1,0 +1,27 @@
+[
+    {
+      "ParameterKey": "Org",
+      "ParameterValue": "myorg"
+    }, 
+    {
+      "ParameterKey": "Environment",
+      "ParameterValue": "dev"
+    },
+    {
+      "ParameterKey": "Appname",
+      "ParameterValue": "demo"
+    },
+    {
+      "ParameterKey": "AppId",
+      "ParameterValue": "555555"
+    },
+    {
+      "ParameterKey": "OwnerEmailDist",
+      "ParameterValue": "example@email.com"
+    },
+    {
+      "ParameterKey": "CostCenterNumber",
+      "ParameterValue": "111111"
+    }
+    
+  ]

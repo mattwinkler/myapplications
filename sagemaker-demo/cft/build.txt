@@ -1,0 +1,68 @@
+# Data science lambda role:
+aws cloudformation create-stack `
+--template-body file://myorg-demo-ds-lambda-role-cft.yml `
+--stack-name myorg-dev-demo-v1x0-ds-lambda-role-stk `
+--parameters file://build-configs.json `
+--capabilities CAPABILITY_NAMED_IAM
+
+#aws cloudformation delete-stack `
+--stack-name myorg-dev-demo-v1x0-ds-lambda-role-stk 
+
+
+# Sagemkaer IAM Role:
+aws cloudformation create-stack `
+--template-body file://myorg-demo-sagemaker-iam-role-cft.yml `
+--stack-name myorg-dev-demo-v1x0-sagemaker-iam-role-stk `
+--parameters file://build-configs.json `
+--capabilities CAPABILITY_NAMED_IAM
+
+# aws cloudformation delete-stack `
+--stack-name myorg-dev-mpa-v1x0-sagemaker-iam-role-stk
+
+
+# Sagemaker notebook instance:
+aws cloudformation create-stack `
+--template-body file://myorg-demo-sagemaker-instance-cft.yml `
+--stack-name myorg-dev-demo-v1x0-sagemaker-instance-stk `
+--parameters file://build-configs.json
+
+#aws cloudformation delete-stack `
+--stack-name myorg-dev-demo-v1x0-sagemaker-instance-stk
+
+
+# code S3 bucket
+aws cloudformation create-stack `
+--template-body file://myorg-demo-code-bkt-cft.yml `
+--stack-name myorg-dev-demo-v1x0-code-bkt-stk `
+--parameters file://build-configs.json
+
+#aws cloudformation delete-stack `
+--stack-name myorg-dev-demo-v1x0-code-bkt-stk
+
+# zip lambda function and upload to code bucket
+..\lambda\zip-lambda-code.ps1 batch-transform v1
+..\lambda\upload-lambda  myorg-dev-demo-us-east-2-code-bkt batch-transform v1
+
+#aws cloudformation delete-stack `
+--stack-name myorg-dev-demo-v1x0-analytics-stk
+
+
+# batch transform lambda function:
+aws cloudformation create-stack `
+--template-body file://myorg-demo-lambda-batch-cft.yml `
+--stack-name myorg-dev-demo-v1x0-lambda-batch-stk `
+--parameters file://build-configs.json 
+
+#aws cloudformation delete-stack `
+--stack-name myorg-dev-demo-v1x0-lambda-batch-stk
+
+
+# analytics S3 bucket:
+aws cloudformation create-stack `
+--template-body file://myorg-demo-analytics-bkt-cft.yml `
+--stack-name myorg-dev-demo-v1x0-analytics-bkt-stk `
+--parameters file://build-configs.json
+
+#aws cloudformation delete-stack `
+--stack-name myorg-dev-demo-v1x0-analytics-stk
+

@@ -1,0 +1,109 @@
+
+Description: Creates Sagemaker Execution Role with necessary permissions
+
+Parameters: 
+  Org: 
+    Type: String
+    Default: myorg
+    AllowedPattern: "[a-z]+"
+    Description: (USE LOWERCASE) The company (Org) for these resources.
+    
+  Environment: 
+    Type: String
+    AllowedPattern: "[a-z]+"
+    AllowedValues: 
+      - sbox
+      - dev
+      - test
+      - prod
+    Description: (USE LOWERCASE) Enter the environment to which this stack is to be deployed.
+
+  Appname: 
+    Type: String
+    AllowedPattern: "[a-z]+"
+    Default: demo
+    Description: (USE LOWERCASE) The Remedy CMDB Inventory name of app.
+
+  AppId: 
+    Type: String
+    Default: 555555
+    Description: The unique number assigned to your app during Archer assessment.
+
+  OwnerEmailDist: 
+    Type: String
+    Default: example@email.com
+    Description: Email distribution list of the team that owns the component.
+
+  CostCenterNumber: 
+    Type: String
+    Default: 111111
+    Description: Cost Center Number associated to the system.
+
+
+Conditions:
+  CreateSboxTags: !Equals [ !Ref Environment, sbox ]
+
+Resources:
+  SageMakerExecutionRole: 
+    Type: "AWS::IAM::Role"
+    Properties: 
+      AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement: 
+          - 
+            Effect: "Allow"
+            Principal: 
+              Service: 
+                - "sagemaker.amazonaws.com"
+            Action: 
+              - "sts:AssumeRole"
+
+      Path: "/"
+      Policies: 
+        - 
+          PolicyName: !Sub "${Org}-${Environment}-${Appname}-sagmaker-iam-policy"
+          PolicyDocument: 
+            Version: "2012-10-17"
+            Statement:
+              - 
+                Effect: "Allow"
+                Action:
+                  - "sagemaker:*"
+                  - "ecr:GetAuthorizationToken"
+                  - "ecr:GetDownloadUrlForLayer"
+                  - "ecr:BatchGetImage"
+                  - "ecr:BatchCheckLayerAvailability"
+                  - "cloudwatch:PutMetricData"
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:DescribeLogStreams"
+                  - "logs:PutLogEvents"
+                  - "logs:GetLogEvents"
+                  - "s3:CreateBucket"
+                  - "s3:ListBucket"
+                  - "s3:GetBucketLocation"
+                  - "s3:GetObject"
+                  - "s3:PutObject"
+                  - "s3:DeleteObject"
+
+                  # These for deploying SM into private VPC
+                  - "ec2:CreateNetworkInterface"
+                  - "ec2:CreateNetworkInterfacePermission"
+                  - "ec2:DeleteNetworkInterface"
+                  - "ec2:DeleteNetworkInterfacePermission"
+                  - "ec2:DescribeNetworkInterfaces"
+                  - "ec2:DescribeVpcs"
+                  - "ec2:DescribeDhcpOptions"
+                  - "ec2:DescribeSubnets"
+                  - "ec2:DescribeSecurityGroups"
+                  - "iam:GetRole"
+                  - "iam:PassRole"
+
+                Resource: "*" # update to specific AWS services as-needed
+
+Outputs:
+  SageMakerExecutionRole:
+    Description: The Sagemaker IAM Role Arn
+    Value: !GetAtt SageMakerExecutionRole.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-SAGEMAKER-IAM-ROLE"

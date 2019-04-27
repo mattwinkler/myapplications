@@ -1,0 +1,116 @@
+Description: "Creates the code store (S3 Bucket) for the given Function (Business Unit)"
+
+Parameters: 
+
+  Org: 
+    Type: String
+    Default: myorg
+    AllowedPattern: "[a-z]+"
+    Description: (USE LOWERCASE) The company (Org) for these resources.
+    
+  Environment: 
+    Type: String
+    AllowedPattern: "[a-z]+"
+    AllowedValues: 
+      - sbox
+      - dev
+      - test
+      - prod
+    Description: (USE LOWERCASE) Enter the environment to which this stack is to be deployed.
+
+  Appname: 
+    Type: String
+    Default: demo
+    Description: Name of the appp
+
+  AppId: 
+    Type: String
+    Default: 555555
+    Description: The unique number assigned to your app during Archer assessment.
+
+  OwnerEmailDist: 
+    Type: String
+    Default: example@email.com
+    Description: Email distribution list of the team that owns the component.
+
+  CostCenterNumber: 
+    Type: String
+    Default: 111111
+    Description: Cost Center Number associated to the system.
+
+  ExpirationInDays:
+    Type: String
+    Default: 2555
+    Description: Number of days a raw file will exist in the data store before being deleted (Default is 2555 days = 7 Years)
+    
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - 
+        Label: 
+          default: "Standard Tags"
+        Parameters: 
+          - Org
+          - Environment
+          - Appname
+          - AppId
+          - OwnerEmailDist
+          - CostCenterNumber
+
+Conditions:
+  CreateSboxTags: !Equals [ !Ref Environment, sbox ]
+  UseDefaultKms: !Equals [ !Ref Environment, sbox ]
+                              
+Resources:
+
+  #S3 Bucket for code
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      # AccessControl: Private
+      # BucketEncryption: 
+      #   ServerSideEncryptionConfiguration:
+      #     - ServerSideEncryptionByDefault:
+      #         SSEAlgorithm: aws:kms
+      #         KMSMasterKeyID: #!If [UseDefaultKms, !Ref "AWS::NoValue", 
+      #           Fn::ImportValue:
+      #             !Sub "${Org}-${Environment}-${Appname}-all-v1x0-outputs-stk-MPA-KMS-KEY"
+      BucketName: 
+        !Join
+        - '-'
+        - - !Ref Org
+          - !Ref Environment
+          - !Ref Appname
+          - !Ref "AWS::Region"
+          - 'code-bkt'
+      Tags:
+        - 
+          Key: "Env"
+          Value: !Ref Environment
+        - 
+          Key: "Appname"
+          Value: !Ref Appname
+        - 
+          Key: "Appid"
+          Value: !Ref AppId
+        - 
+          Key: "Owner"
+          Value: !Ref OwnerEmailDist
+        - 
+          Key: "Costcenter"
+          Value: !Ref CostCenterNumber
+
+            
+Outputs:
+  BucketName:
+    Description: The code bucket name
+    Value: !Ref S3Bucket
+    Export:
+      Name: !Sub "${AWS::StackName}-BUCKET-NAME"
+      
+  BucketArn:
+    Description: The code bucket ARN
+    Value: !GetAtt S3Bucket.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-BUCKET-ARN"
+

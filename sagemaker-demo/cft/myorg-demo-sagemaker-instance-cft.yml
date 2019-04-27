@@ -1,0 +1,113 @@
+Description: "Creates a Sagemaker Notebook instance"
+
+Parameters: 
+  Org: 
+    Type: String
+    Default: myorg
+    AllowedPattern: "[a-z]+"
+    Description: (USE LOWERCASE) The company (Org) for these resources.
+    
+  Environment: 
+    Type: String
+    AllowedPattern: "[a-z]+"
+    AllowedValues: 
+      - sbox
+      - dev
+      - test
+      - prod
+    Description: (USE LOWERCASE) Enter the environment to which this stack is to be deployed.
+
+  Appname: 
+    Type: String
+    AllowedPattern: "[a-z]+"
+    Default: demo
+    Description: (USE LOWERCASE) The Remedy CMDB Inventory name of app.
+
+  AppId: 
+    Type: String
+    Default: 555555
+    Description: The unique number assigned to your app during Archer assessment.
+
+  OwnerEmailDist: 
+    Type: String
+    Default: example@email.com
+    Description: Email distribution list of the team that owns the component.
+
+  CostCenterNumber: 
+    Type: String
+    Default: 111111
+    Description: Cost Center Number associated to the system.
+
+
+Conditions:
+  CreateSboxTags: !Equals [ !Ref Environment, sbox ]
+
+Resources:
+  # Possible to automate things like cloning a git repo, downloading additional libraries, etc.
+  # NotebookLifecycleConfiguration:
+  #   Type: "AWS::SageMaker::NotebookInstanceLifecycleConfig"
+  #   Properties:
+  #     NotebookInstanceLifecycleConfigName: !Sub ${Org}-${Environment}-${Function}-${Appname}-sagemaker-lifecyle-config"
+
+  NotebookInstance:
+    Type: "AWS::SageMaker::NotebookInstance"
+    Properties:
+      NotebookInstanceName: !Sub ${Org}-${Environment}-${Appname}-sagemaker
+      InstanceType: ml.t2.large
+      
+      RoleArn:
+        Fn::ImportValue:
+          !Sub "${Org}-${Environment}-${Appname}-v1x0-sagemaker-iam-role-stk-SAGEMAKER-IAM-ROLE"
+      
+      DirectInternetAccess: 'Enabled' # Can also run via NAT gateway in VPC 
+      
+      # SubnetId:
+      #   Fn::ImportValue:
+      #     !Join
+      #     - '-'
+      #     - - !Ref Org
+      #       - !Ref Environment
+      #       - !Ref Appname
+      #       - 'all-v1x0-outputs-stk'
+      #       - 'APP-PRIVATE-SUBNET-1'
+      
+      # Not using lifecycle configurations to start with
+      #LifecycleConfigName: !Sub ${Org}-${Environment}-${Function}-${Appname}-sagemaker-lifecyle-config
+      # SecurityGroupIds:
+      #   -
+      #     Fn::ImportValue:
+      #       !Join
+      #       - '-'
+      #       - - !Ref Org
+      #         - !Ref Environment
+      #         - !Ref Appname
+      #         - 'sagemaker-sg-stk'
+      #         - 'SAGEMAKER-SECURITY-GROUP'
+
+      Tags:
+        - 
+          Key: "Name"
+          Value: !Sub ${Org}-${Environment}-${Appname}-sagemaker
+        - 
+          Key: "Env"
+          Value: !Ref Environment
+        - 
+          Key: "Appname"
+          Value: !Ref Appname
+        - 
+          Key: "Appid"
+          Value: !Ref AppId
+        - 
+          Key: "Owner"
+          Value: !Ref OwnerEmailDist
+        - 
+          Key: "Costcenter"
+          Value: !Ref CostCenterNumber
+
+
+Outputs:
+  NotebookInstance:
+    Description: The  Id of the Sagemaker notebook instance
+    Value: !Ref NotebookInstance
+    Export:
+      Name: !Sub "${AWS::StackName}-SAGEMAKER-INSTANCE-ID"
